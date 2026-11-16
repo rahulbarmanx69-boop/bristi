@@ -24,15 +24,22 @@ Put your MP3 in the `/public` folder:
 
 ---
 
-### 4. Admin Panel
+### 4. Add Gallery Photos
+Put `.jpg`, `.jpeg`, `.png`, or `.webp` images in `public/photos/`, then run:
+```
+node make-list.js
+```
+This updates `public/photos.js`, which the gallery uses to load only local photos.
+
+### 5. Admin Panel
 Go to **http://localhost:3000/admin.html**
 - Password: `abcdef` (change it in the `.env` file)
-- Upload photos → they appear in the gallery instantly
+- Admin uploads are separate from the local gallery photos above
 - Delete photos → removed from Cloudinary too
 
 ---
 
-### 5. Change Admin Password
+### 6. Change Admin Password
 Open `.env` and change:
 ```
 ADMIN_PASSWORD=your_new_password
@@ -40,7 +47,7 @@ ADMIN_PASSWORD=your_new_password
 
 ---
 
-### 6. Cloudinary Credentials (already set)
+### 7. Cloudinary Credentials (already set)
 In `.env`:
 ```
 CLOUDINARY_CLOUD_NAME=nulazacl
@@ -61,9 +68,12 @@ love/
 │   ├── admin.html     ← Admin upload panel
 │   ├── style.css      ← All styles
 │   ├── app.js         ← Frontend logic
+│   ├── photos.js      ← Generated local gallery photo list
+│   ├── photos/        ← Local gallery photos
 │   ├── me.jpg         ← Your photo ← REPLACE THIS
 │   ├── partner.jpg    ← Her photo  ← REPLACE THIS
 │   └── music.mp3      ← Background song ← ADD THIS
+├── make-list.js       ← Regenerate the local gallery photo list
 ```
 
 # love

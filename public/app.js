@@ -5,7 +5,7 @@
 //   1. Floating hearts background
 //   2. No-button dodging logic
 //   3. Yes button → celebration → gallery transition
-//   4. Gallery page: fetch + render photos
+//   4. Gallery page: render local photos
 //   5. Lightbox (fullscreen photo viewer)
 //   6. Music controls
 // ============================================================
@@ -13,7 +13,7 @@
 // ─── State ────────────────────────────────────────────────
 let noClickCount  = 0;      // How many times "No" has dodged
 let yesScale      = 1;      // Growing scale of Yes button
-let photos        = [];     // All gallery photos from API
+let photos        = [];     // Local gallery photo paths
 let currentPhotoIndex = 0;  // For lightbox navigation
 let isMuted       = false;
 
@@ -191,11 +191,11 @@ function showGalleryPage() {
   // Auto-play music
   playMusic();
 
-  // Load photos from API
+  // Load photos from the local photos folder
   loadPhotos();
 }
 
-async function loadPhotos() {
+function loadPhotos() {
   const grid     = document.getElementById('photo-grid');
   const emptyEl  = document.getElementById('empty-state');
   const loadEl   = document.getElementById('loading-state');
@@ -203,55 +203,56 @@ async function loadPhotos() {
   loadEl.classList.remove('hidden');
   emptyEl.classList.add('hidden');
   grid.innerHTML = '';
+  photos = PHOTOS.map(filename => `photos/${filename}`);
 
-  try {
-    const res  = await fetch('/api/photos');
-    photos     = await res.json();
+  loadEl.classList.add('hidden');
 
-    loadEl.classList.add('hidden');
-
-    if (!photos || photos.length === 0) {
-      emptyEl.classList.remove('hidden');
-      return;
-    }
-
-    // Render each photo card
-    photos.forEach((photo, idx) => {
-      const item = document.createElement('div');
-      item.className = 'photo-item';
-      item.setAttribute('role', 'button');
-      item.setAttribute('tabindex', '0');
-      item.setAttribute('aria-label', `Memory photo ${idx + 1}`);
-
-      const img = document.createElement('img');
-      img.src     = photo.url;
-      img.alt     = `Memory ${idx + 1}`;
-      img.loading = 'lazy';
-
-      item.appendChild(img);
-      item.addEventListener('click', () => openLightbox(idx));
-      item.addEventListener('keydown', (e) => { if (e.key === 'Enter') openLightbox(idx); });
-
-      grid.appendChild(item);
-    });
-
-  } catch (err) {
-    console.error('Failed to load photos:', err);
-    loadEl.classList.add('hidden');
+  if (photos.length === 0) {
     emptyEl.classList.remove('hidden');
+    return;
   }
+
+  photos.forEach((photo, idx) => {
+    const item = document.createElement('div');
+    item.className = 'photo-item';
+    item.setAttribute('role', 'button');
+    item.setAttribute('tabindex', '0');
+    item.setAttribute('aria-label', `Memory photo ${idx + 1}`);
+
+    const img = document.createElement('img');
+    img.alt     = `Memory ${idx + 1}`;
+    img.loading = 'lazy';
+    img.addEventListener('error', () => {
+      item.remove();
+      const failedIndex = photos.indexOf(photo);
+      if (failedIndex !== -1) {
+        photos.splice(failedIndex, 1);
+        if (failedIndex < currentPhotoIndex) currentPhotoIndex--;
+        if (currentPhotoIndex >= photos.length) currentPhotoIndex = Math.max(0, photos.length - 1);
+      }
+      if (photos.length === 0) emptyEl.classList.remove('hidden');
+    });
+    img.src = photo;
+
+    item.appendChild(img);
+    item.addEventListener('click', () => openLightbox(photo));
+    item.addEventListener('keydown', (e) => { if (e.key === 'Enter') openLightbox(photo); });
+
+    grid.appendChild(item);
+  });
 }
 
 
 // ══════════════════════════════════════════════════════════
 // 5. LIGHTBOX
 // ══════════════════════════════════════════════════════════
-function openLightbox(idx) {
-  currentPhotoIndex = idx;
+function openLightbox(photo) {
+  currentPhotoIndex = photos.indexOf(photo);
+  if (currentPhotoIndex === -1) return;
   const lightbox  = document.getElementById('lightbox');
   const lbImg     = document.getElementById('lightbox-img');
 
-  lbImg.src = photos[idx].url;
+  lbImg.src = photo;
   lightbox.classList.remove('hidden');
   document.body.style.overflow = 'hidden';
 
@@ -269,13 +270,13 @@ function closeLightbox() {
 function prevPhoto() {
   if (photos.length === 0) return;
   currentPhotoIndex = (currentPhotoIndex - 1 + photos.length) % photos.length;
-  document.getElementById('lightbox-img').src = photos[currentPhotoIndex].url;
+  document.getElementById('lightbox-img').src = photos[currentPhotoIndex];
 }
 
 function nextPhoto() {
   if (photos.length === 0) return;
   currentPhotoIndex = (currentPhotoIndex + 1) % photos.length;
-  document.getElementById('lightbox-img').src = photos[currentPhotoIndex].url;
+  document.getElementById('lightbox-img').src = photos[currentPhotoIndex];
 }
 
 function lightboxKeyHandler(e) {

@@ -121,8 +121,8 @@ body {
 }
 
 .profile-frame {
-  width: 200px;
-  height: 200px;
+  width: 250px;
+  height: 400px;
   border-radius: 22px;
   padding: 5px;
   background: linear-gradient(135deg, var(--pink), var(--purple), var(--rose), var(--pink));
